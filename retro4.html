@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Password Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --secondary: #4285f4;
+            --background: #f8f9fa;
+            --error: #d93025;
+            --success: #1e8e3e;
+            --surface: #ffffff;
+            --text: #202124;
+            --android-green: #3ddc84;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', 'Arial', sans-serif;
+        }
+
+        body {
+            background: #121212;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            background: #000;
+            border-radius: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            border: 8px solid #333;
+        }
+
+        /* Android-specific top bar */
+        .android-status-bar {
+            height: 24px;
+            background-color: #000;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 16px;
+            gap: 8px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .android-status-bar i {
+            font-style: normal;
+        }
+
+        /* Android-specific navigation bar */
+        .android-nav-bar {
+            height: 48px;
+            background-color: #000;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-button {
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+
+        .nav-back {
+            transform: rotate(45deg);
+            border-radius: 2px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .nav-home {
+            border: 2px solid white;
+        }
+
+        .nav-recent {
+            border: 2px solid white;
+            border-radius: 2px;
+        }
+
+        .main-container {
+            height: calc(100% - 72px); /* Accounting for status and nav bars */
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            overflow-y: auto;
+            padding: 16px;}
+
+        .app-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 28px;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 24px;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .reset-btn {
+            background-color: var(--android-green);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            cursor: pointer;
+            color: black;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            border: 3px black;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: #f1f3f4;
+            color: var(--text);
+        }
+
+        .rules-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .rule {
+            padding: 16px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            transform: translateY(20px);
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .rule.success {
+            border-left: 4px solid var(--android-green);
+        }
+
+        .rule.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            margin-right: 12px;
+            background-color: #dadce0;
+            position: relative;
+        }
+
+        .indicator.success {
+            background-color: var(--android-green);
+        }
+
+        .indicator.success::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .indicator.error {
+            background-color: var(--error);
+        }
+
+        .indicator.error::after {
+            content: '×';
+            position: absolute;
+            color: white;
+            font-size: 16px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .progress {
+            position: absolute;
+            top: 24px;
+            left: 0;
+            height: 4px;
+            background-color: var(--android-green);
+            transition: width 0.3s ease;
+        }
+
+        .category {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 12px;
+            margin-left: 8px;
+            background-color: #f1f3f4;
+            color: var(--text);
+        }
+
+        /* Custom scrollbar */
+        .main-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .main-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .main-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+<div class="phone-frame">
+    <div class="android-status-bar">
+        <i>4G</i>
+        <i>📶</i>
+        <i>🔋 100%</i>
+        <i>12:00</i>
+    </div>
+    <div class="progress"></div>
+    <div class="main-container">
+        <div class="app-container">
+            <div class="header">
+                <h1 class="title">Password Game</h1>
+                <button class="reset-btn">↺</button>
+            </div>
+            <input type="text" class="password-input" placeholder="Enter your password...">
+            <div class="rules-container"></div>
+        </div>
+    </div>
+    <div class="android-nav-bar">
+        <div class="nav-back nav-button"></div>
+        <div class="nav-home nav-button"></div>
+        <div class="nav-recent nav-button"></div>
+    </div>
+</div>
+
+<script src="rules.js"></script>
+<script>
+    class PasswordGame {
+        constructor() {
+            this.password = '';
+            this.activeRules = [];
+            this.currentRuleIndex = 0;
+            this.maxRules = passwordRules.length;
+            this.selectedRules = this.getRandomRules();
+
+            this.input = document.querySelector('.password-input');
+            this.rulesContainer = document.querySelector('.rules-container');
+            this.resetBtn = document.querySelector('.reset-btn');
+            this.progressBar = document.querySelector('.progress');
+
+            this.input.addEventListener('input', this.handleInput.bind(this));
+            this.resetBtn.addEventListener('click', this.resetGame.bind(this));
+
+            this.initializeGame();
+        }
+
+        getRandomRules() {
+            let rules = [...passwordRules];
+            for (let i = rules.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [rules[i], rules[j]] = [rules[j], rules[i]];
+            }
+            return rules;
+        }
+
+        initializeGame() {
+            this.addRule(this.selectedRules[0]);
+            this.updateProgress();
+        }
+
+        addRule(ruleObj) {
+            const ruleElement = document.createElement('div');
+            ruleElement.className = 'rule';
+            ruleElement.innerHTML = `
+                    <span class="indicator"></span>
+                    <div>
+                        <span class="rule-text">${ruleObj.rule}</span>
+                        <span class="category">${ruleObj.category}</span>
+                    </div>
+                `;
+
+            this.rulesContainer.appendChild(ruleElement);
+            this.activeRules.push({
+                element: ruleElement,
+                validator: ruleObj.validator
+            });
+
+            gsap.to(ruleElement, {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                ease: "back.out(1.7)"
+            });
+        }
+
+        handleInput(e) {
+            this.password = e.target.value;
+            this.validateRules();
+        }
+
+        validateRules() {
+            let allPreviousValid = true;
+
+            this.activeRules.forEach((rule, index) => {
+                try {
+                    const isValid = new Function('password', `return ${rule.validator}`)(this.password);
+
+                    if (isValid) {
+                        rule.element.classList.add('success');
+                        rule.element.classList.remove('error');
+                        rule.element.querySelector('.indicator').classList.add('success');
+                        rule.element.querySelector('.indicator').classList.remove('error');
+                    } else {
+                        rule.element.classList.remove('success');
+                        rule.element.classList.add('error');
+                        rule.element.querySelector('.indicator').classList.remove('success');
+                        rule.element.querySelector('.indicator').classList.add('error');
+
+                        if (index < this.currentRuleIndex) {
+                            allPreviousValid = false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error validating rule:', error);
+                }
+            });
+
+            const currentRuleValid = this.activeRules[this.currentRuleIndex]?.element.classList.contains('success');
+
+            if (currentRuleValid && allPreviousValid && this.currentRuleIndex < this.maxRules - 1) {
+                this.currentRuleIndex++;
+                this.addRule(this.selectedRules[this.currentRuleIndex]);
+            }
+
+            this.updateProgress();
+        }
+
+        updateProgress() {
+            const progress = (this.currentRuleIndex / this.maxRules) * 100;
+            this.progressBar.style.width = `${progress}%`;
+        }
+
+        resetGame() {
+            this.password = '';
+            this.input.value = '';
+            this.activeRules = [];
+            this.currentRuleIndex = 0;
+            this.selectedRules = this.getRandomRules();
+            this.rulesContainer.innerHTML = '';
+            this.addRule(this.selectedRules[0]);
+            this.updateProgress();
+        }
+    }
+
+    // Initialize the game
+    const game = new PasswordGame();
+</script>
+</body>
+</html>

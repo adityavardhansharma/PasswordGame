@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameBoy Password Game</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    :root {
+      --gb-darkest: #0f380f;
+      --gb-dark: #306230;
+      --gb-light: #8bac0f;
+      --gb-lightest: #9bbc0f;
+      --gb-body: #c4cfa1;
+      --gb-gray: #8b8b8b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Press Start 2P', cursive;
+    }
+
+    body {
+      background-color: var(--gb-gray);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .gameboy {
+      background-color: #ddd;
+      padding: 60px;
+      border-radius: 15px 15px 90px 15px;
+      box-shadow:
+              -8px 0 #bbb,
+              8px 0 #999,
+              0 8px #999,
+              0 -8px #bbb;
+      position: relative;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .screen-border {
+      background-color: #666;
+      padding: 30px;
+      border-radius: 8px 8px 45px 8px;
+      margin-bottom: 45px;
+    }
+
+    .screen {
+      background-color: var(--gb-lightest);
+      padding: 30px;
+      border: 6px solid #333;
+      height: 500px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .screen-border::before {
+      content: "Nintendo";
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.8rem;
+      color: #666;
+      letter-spacing: 1px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+    }
+
+    .d-pad {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      margin-left: 30px;
+    }
+
+    .d-pad::before {
+      content: '';
+      position: absolute;
+      width: 120px;
+      height: 38px;
+      background: #444;
+      top: 41px;
+    }
+
+    .d-pad::after {
+      content: '';
+      position: absolute;
+      height: 120px;
+      width: 38px;
+      background: #444;
+      left: 41px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 30px;
+      transform: rotate(-25deg);
+      margin-right: 30px;
+    }
+
+    .button {
+      width: 52px;
+      height: 52px;
+      background: #9b1b1b;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #600;
+      font-size: 0.9rem;
+    }
+
+    .option-buttons {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 60px;
+    }
+
+    .option-button {
+      width: 75px;
+      height: 15px;
+      background: #666;
+      border-radius: 8px;
+      transform: rotate(-25deg);
+    }
+
+    .title {
+      font-size: 1.2rem;
+      color: var(--gb-darkest);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 1rem;
+      background-color: var(--gb-light);
+      border: 3px solid var(--gb-darkest);
+      color: var(--gb-darkest);
+      margin-bottom: 1.5rem;
+      font-family: 'Press Start 2P', cursive;
+    }
+
+    .password-input::placeholder {
+      color: var(--gb-dark);
+    }
+
+    .rules-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .rule {
+      padding: 0.8rem;
+      font-size: 0.8rem;
+      background-color: var(--gb-light);
+      border: 3px solid var(--gb-darkest);
+      color: var(--gb-darkest);
+      line-height: 1.4;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .rule.success {
+      border-color: var(--gb-dark);
+      background-color: var(--gb-lightest);
+    }
+
+    .rule.error {
+      border-color: #8b1b1b;
+      background-color: #bc8b8b;
+    }
+
+    .indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 6px;
+      background-color: var(--gb-darkest);
+    }
+
+    .indicator.success {
+      background-color: var(--gb-dark);
+    }
+
+    .indicator.error {
+      background-color: #8b1b1b;
+    }
+
+    .category {
+      display: inline-block;
+      padding: 3px 6px;
+      font-size: 0.6rem;
+      background-color: var(--gb-dark);
+      color: var(--gb-lightest);
+      margin-left: 6px;
+    }
+
+    .power-indicator {
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      width: 12px;
+      height: 12px;
+      background-color: #f00;
+      border-radius: 50%;
+      border: 2px solid #900;
+    }
+
+    .model-text {
+      position: absolute;
+      bottom: 15px;
+      right: 30px;
+      font-size: 0.6rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .screen::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    .screen::-webkit-scrollbar-track {
+      background: var(--gb-light);
+    }
+
+    .screen::-webkit-scrollbar-thumb {
+      background: var(--gb-darkest);
+    }
+  </style>
+</head>
+<body>
+<div class="gameboy">
+  <div class="power-indicator"></div>
+  <div class="screen-border">
+    <div class="screen">
+      <h1 class="title">PASSWORD GAME</h1>
+      <input type="text" class="password-input" placeholder="ENTER PASSWORD...">
+      <div class="rules-container"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="d-pad"></div>
+    <div class="action-buttons">
+      <div class="button">B</div>
+      <div class="button">A</div>
+    </div>
+  </div>
+  <div class="option-buttons">
+    <div class="option-button"></div>
+    <div class="option-button"></div>
+  </div>
+  <div class="model-text">DMG-01</div>
+</div>
+
+<script src="rules.js"></script>
+<script>
+  class PasswordGame {
+    constructor() {
+      this.password = '';
+      this.activeRules = [];
+      this.currentRuleIndex = 0;
+      this.maxRules = 30;
+      this.selectedRules = this.getRandomRules();
+
+      this.input = document.querySelector('.password-input');
+      this.rulesContainer = document.querySelector('.rules-container');
+
+      this.input.addEventListener('input', this.handleInput.bind(this));
+      this.initializeGame();
+    }
+
+    getRandomRules() {
+      // Create a copy of the rules array from the external rules.js file
+      let rules = [...passwordRules];
+      // Shuffle the array
+      for (let i = rules.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rules[i], rules[j]] = [rules[j], rules[i]];
+      }
+      // Return only the first 30 rules
+      return rules.slice(0, this.maxRules);
+    }
+
+    initializeGame() {
+      this.addRule(this.selectedRules[0]);
+    }
+
+    addRule(ruleObj) {
+      const ruleElement = document.createElement('div');
+      ruleElement.className = 'rule';
+      ruleElement.innerHTML = `
+                    <span class="indicator"></span>
+                    <span class="rule-text">${ruleObj.rule}</span>
+                    <span class="category">${ruleObj.category}</span>
+                `;
+
+      this.rulesContainer.appendChild(ruleElement);
+      this.activeRules.push({
+        element: ruleElement,
+        validator: ruleObj.validator
+      });
+
+      gsap.to(ruleElement, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: "back.out(1.7)"
+      });
+    }
+
+    handleInput(e) {
+      this.password = e.target.value;
+      this.validateRules();
+    }
+
+    validateRules() {
+      let allPreviousValid = true;
+
+      this.activeRules.forEach((rule, index) => {
+        try {
+          const isValid = new Function('password', `return ${rule.validator}`)(this.password);
+
+          if (isValid) {
+            rule.element.classList.add('success');
+            rule.element.classList.remove('error');
+            rule.element.querySelector('.indicator').classList.add('success');
+            rule.element.querySelector('.indicator').classList.remove('error');
+          } else {
+            rule.element.classList.remove('success');
+            rule.element.classList.add('error');
+            rule.element.querySelector('.indicator').classList.remove('success');
+            rule.element.querySelector('.indicator').classList.add('error');
+
+            if (index < this.currentRuleIndex) {
+              allPreviousValid = false;
+            }
+          }
+        } catch (error) {
+          console.error('Error validating rule:', error);
+        }
+      });
+
+      const currentRuleValid = this.activeRules[this.currentRuleIndex]?.element.classList.contains('success');
+
+      if (currentRuleValid && allPreviousValid && this.currentRuleIndex < this.maxRules - 1) {
+        this.currentRuleIndex++;
+        this.addRule(this.selectedRules[this.currentRuleIndex]);
+      }
+    }
+  }
+
+  // Initialize the game when the page loads
+  document.addEventListener('DOMContentLoaded', () => {
+    const game = new PasswordGame();
+  });
+</script>
+</body>
+</html>
